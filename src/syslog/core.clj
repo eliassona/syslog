@@ -1,7 +1,6 @@
 (ns syslog.core
   (:require [clojure.core.async :refer [chan go go-loop >! <! >!! <!! timeout thread dropping-buffer]]
             [instaparse.core :as insta])
-  (use [criterium.core])
   (:import [java.net DatagramSocket DatagramPacket InetAddress]))
 
 
@@ -67,31 +66,26 @@
 ;;tests
 
 
-;;example message
-(def rfc5424-msg 
-  "<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] BOMAn application event log entry...")
-
-
-
 ;; --------------------------------------- test code for servers and clients ----------------------------------------------
-(defn server [] 
-   (let [serverSocket (DatagramSocket. 9876)
-         receiveData  (byte-array 1024)]
-      (while true
-          (let [receivePacket (DatagramPacket. receiveData (count receiveData))]
-            (.receive serverSocket receivePacket)
-            (-> receivePacket .getData String. parse println)))))
+(comment 
+  (defn server [] 
+     (let [serverSocket (DatagramSocket. 9876)
+           receiveData  (byte-array 1024)]
+        (while true
+            (let [receivePacket (DatagramPacket. receiveData (count receiveData))]
+              (.receive serverSocket receivePacket)
+              (-> receivePacket .getData String. parse println)))))
 
 
 
-(defn client []
-  (let [clientSocket (DatagramSocket.)
-        ip-address (InetAddress/getByName "localhost")
-        sendData  (.getBytes rfc5424-msg)]
-    (while true 
-      (let [sendPacket  (DatagramPacket. sendData, (count sendData), ip-address, 9876)]
-        (.send clientSocket sendPacket)
-        (Thread/sleep 10000)))))
+  (defn client []
+    (let [clientSocket (DatagramSocket.)
+          ip-address (InetAddress/getByName "localhost")
+          sendData  (.getBytes rfc5424-msg)]
+      (while true 
+        (let [sendPacket  (DatagramPacket. sendData, (count sendData), ip-address, 9876)]
+          (.send clientSocket sendPacket)
+          (Thread/sleep 10000))))))
 
 
 

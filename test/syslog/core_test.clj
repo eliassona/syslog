@@ -1,7 +1,8 @@
 (ns syslog.core-test
+  (:require [criterium.core :refer [bench]])
   (:require [clojure.test :refer :all]
-            [syslog.core :refer :all]
-            [instaparse.core :as insta]))
+              [syslog.core :refer :all]
+              [instaparse.core :as insta]))
 
 ;;test examples taken from rfc5424
 

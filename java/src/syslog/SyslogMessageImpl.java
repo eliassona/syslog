@@ -6,14 +6,16 @@ import java.util.Map;
 import clojure.lang.Keyword;
 
 public class SyslogMessageImpl implements SyslogMessage {
-	static final Keyword header = Keyword.intern(null, "header");
-	static final Keyword msg = Keyword.intern(null, "msg");
-	static final Keyword version = Keyword.intern(null, "version");
-	static final Keyword pri = Keyword.intern(null, "pri");
-	static final Keyword sd = Keyword.intern(null, "structured-data");
-	private Map<String, Object> map;
+	static final Keyword facility = Keyword.intern("facility");
+	static final Keyword severity = Keyword.intern("severity");
+	static final Keyword header = Keyword.intern("header");
+	static final Keyword msg = Keyword.intern("msg");
+	static final Keyword version = Keyword.intern("version");
+	static final Keyword pri = Keyword.intern("pri");
+	static final Keyword sd = Keyword.intern("structured-data");
+	private final Map<String, Object> map;
 
-	public SyslogMessageImpl(Object m) {
+	public SyslogMessageImpl(final Object m) {
 		if (!(m instanceof Map)) {
 			throw new IllegalArgumentException(m.toString());
 		}
@@ -36,33 +38,31 @@ public class SyslogMessageImpl implements SyslogMessage {
 	}
 
 	@Override
-	public Priority getPri() {
-		return new PriorityImpl(getHeader(pri));
-	}
-
-	private Object getHeader(Keyword k) {
-		Object headerMap = map.get(header); 
-		if (!(headerMap instanceof Map)) {
-			throw new IllegalArgumentException(headerMap.toString());
-		}
-		return ((Map<Keyword, Object>)headerMap).get(k);
-	}
-
-	@Override
-	public long getVersion() {
-		return (long) getHeader(version);
+	public int getVersion() {
+		return ((Long) getHeader(version)).intValue();
 	}
 	@Override
 	public String toString() {
 		return map.toString();
 	}
-}
 
-
-
-final class PriorityImpl implements Priority {
-
-	public PriorityImpl(Object object) {
+	@Override
+	public int getSeverity() {
+		return ((Long) getHeader(severity)).intValue();
 	}
-	
+
+	@Override
+	public int getFacility() {
+		return ((Long) getHeader(facility)).intValue();
+	}
+	private Object getHeader(final Keyword k) {
+		final Object headerMap = map.get(header); 
+		if (!(headerMap instanceof Map)) {
+			throw new IllegalArgumentException(headerMap.toString());
+		}
+		return ((Map<Keyword, Object>)headerMap).get(k);
+	}
 }
+
+
+

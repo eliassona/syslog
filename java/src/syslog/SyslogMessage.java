@@ -7,6 +7,7 @@ public interface SyslogMessage {
 	String getMsg();
 	Map<String, Map<String, String>> getStructuredData();
 	Date getTimestamp();
-	Priority getPri();
-	long getVersion();
+	int getVersion();
+	int getSeverity();
+	int getFacility();
 }

@@ -5,12 +5,13 @@ import clojure.lang.Symbol;
 import clojure.lang.Var;
 
 public class SyslogMessageParser {
+	private static final String SYSLOG_NS = "syslog.core";
 	private final Var cljParse;
 	public SyslogMessageParser() {
-		RT.var("clojure.core", "require").invoke(Symbol.intern("syslog.core"));
-		cljParse = RT.var("syslog.core", "parse");
+		RT.var("clojure.core", "require").invoke(Symbol.intern(SYSLOG_NS));
+		cljParse = RT.var(SYSLOG_NS, "parse");
 	}
-	SyslogMessage parse(final String msg) {
+	public SyslogMessage parse(final String msg) {
 		return new SyslogMessageImpl(cljParse.invoke(msg));
 	}
 	
