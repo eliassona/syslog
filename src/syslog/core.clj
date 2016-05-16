@@ -24,7 +24,7 @@
    :NONZERO-DIGIT identity
    :DIGIT identity
    :PRIVAL (fn [& args] args)
-   :PRI (fn [_ pri _] [:pri pri])
+   :PRI (fn [_ pri _] [:pri (map read-string pri)])
    :VERSION (fn [v] [:version (read-string v)])
    :DATE-FULLYEAR apply-str
    :DATE-MONTH apply-str
@@ -44,10 +44,12 @@
    :UTF-8-STRING apply-str
    :PARAM-NAME identity
    :PARAM-VALUE identity
-   :SD-PARAM (fn [n _ _ v _]  {:name n, :value v})
-   :SD-ELEMENT (fn [_ sd-id _ & params] [sd-id params])
-   :STRUCTURED-DATA identity
-   :SYSLOG-MSG (fn [[pri version timestamp] & [_ & sd]] {:header (apply hash-map (concat pri version timestamp)) :structured-data sd})
+   :SD-PARAM (fn [n _ _ v _]  [n v])
+   :SD-ID identity
+   :SD-ELEMENT (fn [_ sd-id _ & params] [sd-id (apply hash-map (flatten (map first (partition 2 params))))])
+   :STRUCTURED-DATA (partial apply hash-map) 
+   :SYSLOG-MSG (fn [[pri version timestamp] & [_ & [sd _ msg]]] {:header (apply hash-map (concat pri version timestamp)) :structured-data sd, :msg msg})
+   :MSG identity
    })
 
 (defn ast->data [ast]
@@ -84,3 +86,7 @@
       (let [sendPacket  (DatagramPacket. sendData, (count sendData), ip-address, 9876)]
         (.send clientSocket sendPacket)
         (Thread/sleep 10000)))))
+
+
+
+
