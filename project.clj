@@ -6,4 +6,5 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [instaparse "1.4.2"]
-                 [criterium "0.4.4"]])
+                 [criterium "0.4.4"]]
+  :java-source-paths ["java/src"])

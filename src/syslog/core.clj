@@ -9,11 +9,11 @@
 
 
 (defprotocol ISyslogParser
-  (parse [msg]))
+  (msg->ast [msg]))
 
 (extend-protocol ISyslogParser
   String 
-  (parse [s] (parser s))
+  (msg->ast [s] (parser s))
   )
 
 (def apply-str (partial apply str))
@@ -56,6 +56,10 @@
   (insta/transform
     ast->data-map 
     ast))
+
+
+(defn parse [msg]
+  (-> msg msg->ast ast->data))
 
 
 ;;tests
