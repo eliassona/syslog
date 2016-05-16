@@ -23,8 +23,8 @@
    :PRINTUSASCII identity
    :NONZERO-DIGIT identity
    :DIGIT identity
-   :PRIVAL (fn [& args] args)
-   :PRI (fn [_ pri _] [:pri (map read-string pri)])
+   :PRIVAL (comp read-string apply-str)
+   :PRI (fn [_ pri _] [:facility (bit-and pri 7), :severity (-> pri (bit-and 0xf8) (bit-shift-right 3))])
    :VERSION (fn [v] [:version (read-string v)])
    :DATE-FULLYEAR apply-str
    :DATE-MONTH apply-str
@@ -47,9 +47,11 @@
    :SD-PARAM (fn [n _ _ v _]  [n v])
    :SD-ID identity
    :SD-ELEMENT (fn [_ sd-id _ & params] [sd-id (apply hash-map (flatten (map first (partition 2 params))))])
-   :STRUCTURED-DATA (partial apply hash-map) 
+   :STRUCTURED-DATA (comp (partial apply hash-map) concat) 
    :SYSLOG-MSG (fn [[pri version timestamp] & [_ & [sd _ msg]]] {:header (apply hash-map (concat pri version timestamp)) :structured-data sd, :msg msg})
    :MSG identity
+   :NILVALUE (fn [_] nil)
+   :TIME-NUMOFFSET (fn [sign hours _ minutes] {:sign sign, :hours (read-string hours), :min (read-string minutes)})
    })
 
 (defn ast->data [ast]
