@@ -6,13 +6,16 @@ import clojure.lang.Var;
 
 public class SyslogMessageParser {
 	private static final String SYSLOG_NS = "syslog.core";
-	private final Var cljParse;
+	private final Var cljParseFn;
+	private Var cljTimeOffsetFn;
 	public SyslogMessageParser() {
 		RT.var("clojure.core", "require").invoke(Symbol.intern(SYSLOG_NS));
-		cljParse = RT.var(SYSLOG_NS, "parse");
+		cljParseFn = RT.var(SYSLOG_NS, "parse");
+		cljTimeOffsetFn = RT.var(SYSLOG_NS, "time-offset-in-secs-of");
+		
 	}
 	public SyslogMessage parse(final String msg) {
-		return new SyslogMessageImpl(cljParse.invoke(msg));
+		return new SyslogMessageImpl(cljParseFn.invoke(msg), cljTimeOffsetFn);
 	}
 	
 	public static void main(final String[] args) {

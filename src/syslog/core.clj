@@ -1,9 +1,13 @@
 (ns syslog.core
   (:require [clojure.core.async :refer [chan go go-loop >! <! >!! <!! timeout thread dropping-buffer]]
             [instaparse.core :as insta])
-  (:import [java.net DatagramSocket DatagramPacket InetAddress]))
+  (:import [java.net DatagramSocket DatagramPacket InetAddress]
+           [java.util.concurrent TimeUnit]))
 
-
+(defmacro dbg [body]
+  `(let [x# ~body]
+     (println "dbg:" '~body "=" x#)
+     x#))
 (def parser (insta/parser "resources/rfc5424.txt" :input-format :abnf))
 
 
@@ -63,29 +67,48 @@
   (-> msg msg->ast ast->data))
 
 
-;;tests
+(defprotocol ITimeOffset
+  (time-offset-in-secs-of [this]))
+  
+(extend-protocol ITimeOffset
+  String
+  (time-offset-in-secs-of [s] (if (= s "Z") 0 (throw (IllegalStateException. s))))
+  java.util.Map
+  (time-offset-in-secs-of [m]
+    (cond 
+      (contains? m :time-offset)
+      (->  m :time-offset time-offset-in-secs-of)
+      (= (into #{} (keys m)) #{:sign :hours :min}) 
+      ((-> m :sign read-string eval) (.toSeconds (TimeUnit/MINUTES) (+ (.toMinutes (TimeUnit/HOURS) (:hours m)) (:min m))))
+      :else
+      (->  m :header time-offset-in-secs-of)))
+  nil
+  (time-offset-in-secs-of [m] (throw (IllegalStateException. "cannot contain null"))
+  ))
+  
+  ;;tests
 
 
-;; --------------------------------------- test code for servers and clients ----------------------------------------------
-(comment 
-  (defn server [] 
-     (let [serverSocket (DatagramSocket. 9876)
-           receiveData  (byte-array 1024)]
-        (while true
-            (let [receivePacket (DatagramPacket. receiveData (count receiveData))]
-              (.receive serverSocket receivePacket)
-              (-> receivePacket .getData String. parse println)))))
+  ;; --------------------------------------- test code for servers and clients ----------------------------------------------
+  (comment 
+    (defn server [] 
+       (let [serverSocket (DatagramSocket. 9876)
+             receiveData  (byte-array 1024)]
+          (while true
+              (let [receivePacket (DatagramPacket. receiveData (count receiveData))]
+                (.receive serverSocket receivePacket)
+                (-> receivePacket .getData String. parse println)))))
 
 
 
-  (defn client []
-    (let [clientSocket (DatagramSocket.)
-          ip-address (InetAddress/getByName "localhost")
-          sendData  (.getBytes rfc5424-msg)]
-      (while true 
-        (let [sendPacket  (DatagramPacket. sendData, (count sendData), ip-address, 9876)]
-          (.send clientSocket sendPacket)
-          (Thread/sleep 10000))))))
+    (defn client []
+      (let [clientSocket (DatagramSocket.)
+            ip-address (InetAddress/getByName "localhost")
+            sendData  (.getBytes rfc5424-msg)]
+        (while true 
+          (let [sendPacket  (DatagramPacket. sendData, (count sendData), ip-address, 9876)]
+            (.send clientSocket sendPacket)
+            (Thread/sleep 10000))))))
 
 
 
