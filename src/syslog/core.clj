@@ -8,7 +8,7 @@
   `(let [x# ~body]
      (println "dbg:" '~body "=" x#)
      x#))
-(def parser (insta/parser "resources/rfc5424.txt" :input-format :abnf))
+(def parser (insta/parser "https://raw.githubusercontent.com/eliassona/syslog/master/resources/rfc5424.txt" :input-format :abnf))
 
 
 (defprotocol ISyslogParser
@@ -20,6 +20,13 @@
   )
 
 (def apply-str (partial apply str))
+
+(defn apply-str-w-nil-check [args]
+  (let [s (apply str args)] 
+    (if (= s "-")
+      nil
+      s)))
+
 
 (def ast->data-map
   {:OCTET identity,
@@ -41,7 +48,11 @@
    :FULL-TIME (fn [t to] (concat t to))
    :TIMESTAMP (fn [d _ t] (concat d t))
    :PARTIAL-TIME (fn [hour _ min _ sec sec-frac] [:hour hour, :min min, :sec sec, :sec-frac sec-frac])
-   :HEADER (fn [pri version _ timestamp hostname & args] [pri version timestamp hostname])
+   :HOSTNAME (fn [& args] [:hostname  (apply-str-w-nil-check args)])
+   :PROCID (fn [& args] [:proc-id  (apply-str-w-nil-check args)])
+   :APP-NAME (fn [& args] [:app-name  (apply-str-w-nil-check args)])
+   :MSGID (fn [& args] [:msg-id  (apply-str-w-nil-check args)])
+   :HEADER (fn [pri version _ timestamp _ hostname _ app-name _ proc-id _ msg-id] [pri version timestamp hostname app-name proc-id msg-id])
    :MSG-ANY apply-str
    :SD-NAME apply-str
    :UTF-8-STRING apply-str
@@ -51,7 +62,7 @@
    :SD-ID identity
    :SD-ELEMENT (fn [_ sd-id _ & params] [sd-id (apply hash-map (flatten (map first (partition 2 params))))])
    :STRUCTURED-DATA (comp (partial apply hash-map) concat) 
-   :SYSLOG-MSG (fn [[pri version timestamp] & [_ & [sd _ msg]]] {:header (apply hash-map (concat pri version timestamp)) :structured-data sd, :msg msg})
+   :SYSLOG-MSG (fn [[pri version timestamp hostname app-name proc-id msg-id] & [_ & [sd _ msg]]] {:header (apply hash-map (concat pri version timestamp hostname app-name proc-id msg-id)) :structured-data sd, :msg msg})
    :MSG identity
    :NILVALUE (fn [_] nil)
    :TIME-NUMOFFSET (fn [sign hours _ minutes] {:sign sign, :hours (read-string hours), :min (read-string minutes)})
@@ -104,11 +115,11 @@
     (defn client []
       (let [clientSocket (DatagramSocket.)
             ip-address (InetAddress/getByName "localhost")
-            sendData  (.getBytes rfc5424-msg)]
+            sendData  (.getBytes "<34>1 2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - BOM'su root' failed for lonvick on /dev/pts/8")]
         (while true 
           (let [sendPacket  (DatagramPacket. sendData, (count sendData), ip-address, 9876)]
             (.send clientSocket sendPacket)
-            (Thread/sleep 10000))))))
+            #_(Thread/sleep 10000))))))
 
 
 
