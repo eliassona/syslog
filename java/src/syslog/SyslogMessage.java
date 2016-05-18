@@ -4,9 +4,11 @@ import java.util.Map;
 
 public interface SyslogMessage {
 	String getMsg();
-	Map<String, Map<String, String>> getStructuredData();
-	DateTime getTimestamp();
+	String getStructuredData();
+	String getTimestamp();
 	int getVersion();
 	int getSeverity();
 	int getFacility();
+	Map<String, Map<String, String>> getStructuredDataMap();
+	DateTime getTimestampObj();
 }

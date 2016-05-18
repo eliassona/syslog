@@ -16,6 +16,7 @@ final public class SyslogMessageImpl implements SyslogMessage {
 	private final Map<String, Object> map;
 	private final Var cljTimeOffsetFn;
 
+	@SuppressWarnings("unchecked")
 	public SyslogMessageImpl(final Object m, final Var cljTimeOffsetFn) {
 		this.cljTimeOffsetFn = cljTimeOffsetFn;
 		if (!(m instanceof Map)) {
@@ -29,13 +30,14 @@ final public class SyslogMessageImpl implements SyslogMessage {
 		return (String) map.get(msg);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Map<String, Map<String, String>> getStructuredData() {
+	public Map<String, Map<String, String>> getStructuredDataMap() {
 		return (Map<String, Map<String, String>>) map.get(sd);
 	}
 
 	@Override
-	public DateTime getTimestamp() {
+	public DateTime getTimestampObj() {
 		return new DateTimeImpl(getHeader(), cljTimeOffsetFn);
 	}
 
@@ -61,6 +63,7 @@ final public class SyslogMessageImpl implements SyslogMessage {
 		return getHeader().get(k);
 	}
 	
+	@SuppressWarnings("unchecked")
 	private Map<Keyword, Object> getHeader() {
 		final Object headerMap = map.get(header); 
 		if (!(headerMap instanceof Map)) {
@@ -76,6 +79,16 @@ final public class SyslogMessageImpl implements SyslogMessage {
 	@Override
 	public boolean equals(Object obj) {
 		return map.equals(obj);
+	}
+
+	@Override
+	public String getStructuredData() {
+		return null;
+	}
+
+	@Override
+	public String getTimestamp() {
+		return null;
 	}
 }
 
