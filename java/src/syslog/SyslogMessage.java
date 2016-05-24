@@ -4,11 +4,14 @@ import java.util.Map;
 
 public interface SyslogMessage {
 	String getMsg();
-	String getStructuredData();
+	Map<String, Map<String, String>> getStructuredData();
 	String getTimestamp();
 	int getVersion();
 	int getSeverity();
 	int getFacility();
-	Map<String, Map<String, String>> getStructuredDataMap();
+	String getHostName();
+	String getAppName();
+	String getProcId();
+	String getMsgId();
 	DateTime getTimestampObj();
 }

@@ -1,8 +1,7 @@
 (ns syslog.core
-  (:require [clojure.core.async :refer [chan go go-loop >! <! >!! <!! timeout thread dropping-buffer]]
-            [instaparse.core :as insta])
-  (:import [java.net DatagramSocket DatagramPacket InetAddress]
-           [java.util.concurrent TimeUnit]))
+  (:require [instaparse.core :as insta])
+  (:import [java.util.concurrent TimeUnit])
+  )
 
 (defmacro dbg [body]
   `(let [x# ~body]
@@ -100,27 +99,7 @@
   ;;tests
 
 
-  ;; --------------------------------------- test code for servers and clients ----------------------------------------------
-  (comment 
-    (defn server [] 
-       (let [serverSocket (DatagramSocket. 9876)
-             receiveData  (byte-array 1024)]
-          (while true
-              (let [receivePacket (DatagramPacket. receiveData (count receiveData))]
-                (.receive serverSocket receivePacket)
-                (-> receivePacket .getData String. parse println)))))
-
-
-
-    (defn client []
-      (let [clientSocket (DatagramSocket.)
-            ip-address (InetAddress/getByName "localhost")
-            sendData  (.getBytes "<34>1 2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - BOM'su root' failed for lonvick on /dev/pts/8")]
-        (while true 
-          (let [sendPacket  (DatagramPacket. sendData, (count sendData), ip-address, 9876)]
-            (.send clientSocket sendPacket)
-            #_(Thread/sleep 10000))))))
-
+ 
 
 
 

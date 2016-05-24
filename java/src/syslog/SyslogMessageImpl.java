@@ -30,11 +30,6 @@ final public class SyslogMessageImpl implements SyslogMessage {
 		return (String) map.get(msg);
 	}
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public Map<String, Map<String, String>> getStructuredDataMap() {
-		return (Map<String, Map<String, String>>) map.get(sd);
-	}
 
 	@Override
 	public DateTime getTimestampObj() {
@@ -82,12 +77,36 @@ final public class SyslogMessageImpl implements SyslogMessage {
 	}
 
 	@Override
-	public String getStructuredData() {
+	public Map<String, Map<String, String>> getStructuredData() {
 		return null;
 	}
 
 	@Override
 	public String getTimestamp() {
+		return null;
+	}
+
+	@Override
+	public String getHostName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getAppName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getProcId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getMsgId() {
+		// TODO Auto-generated method stub
 		return null;
 	}
 }

@@ -2,7 +2,10 @@
   (:require [criterium.core :refer [bench]])
   (:require [clojure.test :refer :all]
               [syslog.core :refer :all]
-              [instaparse.core :as insta]))
+              [instaparse.core :as insta]
+              [clojure.core.async :refer [chan go go-loop >! <! >!! <!! timeout thread dropping-buffer close!]])
+  (:import [java.net DatagramSocket DatagramPacket InetAddress]
+           [java.util.concurrent TimeUnit]))
 
 ;;test examples taken from rfc5424
 
@@ -42,3 +45,46 @@
 
 
 
+ ;; --------------------------------------- test code for servers and clients ----------------------------------------------
+#_(defn server [] 
+     (let [serverSocket (DatagramSocket. 9876)
+           receiveData  (byte-array 1024)]
+        (while true
+            (let [receivePacket (DatagramPacket. receiveData (count receiveData))]
+              (.receive serverSocket receivePacket)
+              (-> receivePacket .getData String. parse println)))))
+
+(use 'pacer.core)
+
+(defn client [c]
+  (let [clientSocket (DatagramSocket.)
+        ip-address (InetAddress/getByName "localhost")]
+    (go-loop 
+      []
+      (if-let [s (<! c)]
+        (let [data (.getBytes s)]
+          (.send clientSocket (DatagramPacket. data, (count data), ip-address, 9876))
+          (recur))
+        (do 
+          (println "closing socket")
+          (.close clientSocket))))))
+
+
+(defn client-direct []
+  (let [clientSocket (DatagramSocket.)
+        ip-address (InetAddress/getByName "localhost")
+        data (.getBytes "<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] BOMAn application event log entry...")
+        ]
+    (while true
+       (.send clientSocket (DatagramPacket. data (count data) ip-address, 9876)))))
+
+(comment
+  (def c (chan))
+  (def p 
+    (pacer 
+      100 
+      1E6 
+      (fn [v] "<34>1 2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - BOM'su root' failed for lonvick on /dev/pts/8") c))
+  (client c)
+  (set-tps! 100000 p)
+  )
