@@ -14,4 +14,6 @@ public interface SyslogMessage {
 	String getProcId();
 	String getMsgId();
 	DateTime getTimestampObj();
+	byte[] getRawData();
+	String getClientHostName();
 }

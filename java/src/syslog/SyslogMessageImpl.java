@@ -2,182 +2,152 @@ package syslog;
 
 import java.util.Map;
 
-import clojure.lang.Keyword;
-import clojure.lang.Var;
 
-final public class SyslogMessageImpl implements SyslogMessage {
-	static final Keyword facility = Keyword.intern("facility");
-	static final Keyword severity = Keyword.intern("severity");
-	static final Keyword header = Keyword.intern("header");
-	static final Keyword msg = Keyword.intern("msg");
-	static final Keyword version = Keyword.intern("version");
-	static final Keyword pri = Keyword.intern("pri");
-	static final Keyword sd = Keyword.intern("structured-data");
-	private final Map<String, Object> map;
-	private final Var cljTimeOffsetFn;
+public final class SyslogMessageImpl implements SyslogMessage {
+	public static final String parseErrorMsg = "Can't parse %s in syslog message: '%s'";
+	private final int facility;
+	private final int severity;
+	private final int version;
+	private final String timestamp;
+	private final String hostName;
+	private final String appName;
+	private final String procId;
+	private final String msgId;
+	private final Map<String, Map<String, String>> structuredData;
+	private final String msg;
+	private final byte[] rawData;
+	private String clientHostName;
+	
+	
+	public SyslogMessageImpl(final int facility, 
+			   final int severity, 
+			   final int version, 
+			   final String timestamp, 
+			   final String hostName, 
+			   final String appName, 
+			   final String procId,
+			   final String msgId, 
+			   final Map<String, Map<String, String>> structuredData, 
+			   final String msg, 
+			   final String clientHostName, 
+			   final byte[] data) {
+	this.facility = facility;
+	this.severity = severity;
+	this.version = version;
+	this.timestamp = timestamp;
+	this.hostName = hostName;
+	this.appName = appName;
+	this.procId = procId;
+	this.msgId = msgId;
+	this.structuredData = structuredData;
+	this.msg = msg;
+	this.clientHostName = clientHostName;
+	this.rawData = data;
 
-	@SuppressWarnings("unchecked")
-	public SyslogMessageImpl(final Object m, final Var cljTimeOffsetFn) {
-		this.cljTimeOffsetFn = cljTimeOffsetFn;
-		if (!(m instanceof Map)) {
-			throw new IllegalArgumentException(m.toString());
-		}
-		this.map = (Map<String, Object>) m;
-	}
+}
+
+
 
 	@Override
 	public String getMsg() {
-		return (String) map.get(msg);
+		return msg;
+	}
+
+	@Override
+	public Map<String, Map<String, String>> getStructuredData() {
+		return structuredData;
+	}
+
+	@Override
+	public String getTimestamp() {
+		return timestamp;
+	}
+
+	@Override
+	public int getVersion() {
+		return version;
+	}
+
+	@Override
+	public int getSeverity() {
+		return severity;
+	}
+
+	@Override
+	public int getFacility() {
+		return facility;
+	}
+
+	@Override
+	public String toString() {
+		return String.format("severity %s, facility %s, version %s, timestamp %s, hostname %s, app-name %s, proc-id %s, msg-id %s, sd %s, msg %s", severity, facility, version, timestamp, hostName, appName, procId, msgId, structuredData, msg);
 	}
 
 
 	@Override
 	public DateTime getTimestampObj() {
-		return new DateTimeImpl(getHeader(), cljTimeOffsetFn);
-	}
-
-	@Override
-	public int getVersion() {
-		return ((Long) getHeader(version)).intValue();
-	}
-	@Override
-	public String toString() {
-		return map.toString();
-	}
-
-	@Override
-	public int getSeverity() {
-		return ((Long) getHeader(severity)).intValue();
-	}
-
-	@Override
-	public int getFacility() {
-		return ((Long) getHeader(facility)).intValue();
-	}
-	private Object getHeader(final Keyword k) {
-		return getHeader().get(k);
-	}
-	
-	@SuppressWarnings("unchecked")
-	private Map<Keyword, Object> getHeader() {
-		final Object headerMap = map.get(header); 
-		if (!(headerMap instanceof Map)) {
-			throw new IllegalArgumentException(headerMap.toString());
-		}
-		return (Map<Keyword, Object>) headerMap;
-	}
-	
-	@Override
-	public int hashCode() {
-		return map.hashCode();
-	}
-	@Override
-	public boolean equals(Object obj) {
-		return map.equals(obj);
-	}
-
-	@Override
-	public Map<String, Map<String, String>> getStructuredData() {
-		return null;
-	}
-
-	@Override
-	public String getTimestamp() {
+		//Not implememented here due to performance
 		return null;
 	}
 
 	@Override
 	public String getHostName() {
-		// TODO Auto-generated method stub
-		return null;
+		return hostName;
 	}
 
 	@Override
 	public String getAppName() {
-		// TODO Auto-generated method stub
-		return null;
+		return appName;
 	}
 
 	@Override
 	public String getProcId() {
-		// TODO Auto-generated method stub
-		return null;
+		return procId;
 	}
 
 	@Override
 	public String getMsgId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-}
-
-
-final class DateTimeImpl implements DateTime {
-	static final Keyword sec = Keyword.intern("sec");
-	static final Keyword min = Keyword.intern("min");
-	static final Keyword hour = Keyword.intern("hour");
-	static final Keyword day = Keyword.intern("day");
-	static final Keyword month = Keyword.intern("month");
-	static final Keyword year = Keyword.intern("year");
-	static final Keyword timeOffset = Keyword.intern("time-offset");
-
-	private final Map<Keyword, Object> header;
-	private final Var cljTimeOffsetFn;
-
-	public DateTimeImpl(final Map<Keyword, Object> header, final Var cljTimeOffsetFn) {
-		this.header = header;
-		this.cljTimeOffsetFn = cljTimeOffsetFn;
-	}
-
-	@Override
-	public String getSecond() {
-		return (String) header.get(sec);
-	}
-
-	@Override
-	public String getMinute() {
-		return (String) header.get(min);
-	}
-
-	@Override
-	public String getHour() {
-		return (String) header.get(hour);
-	}
-
-	@Override
-	public String getDay() {
-		return (String) header.get(day);
-	}
-
-	@Override
-	public String getMonth() {
-		return (String) header.get(month);
-	}
-
-	@Override
-	public String getYear() {
-		return (String) header.get(year);
-	}
-
-	@Override
-	public int getTimeOffsetInSecs() {
-		return ((Long)cljTimeOffsetFn.invoke(header)).intValue();
+		return msgId;
 	}
 	
 	@Override
-	public String toString() {
-		return header.toString(); //TODO
+	public byte[] getRawData() {
+		return rawData;
+	}
+
+
+
+
+	@Override
+	public String getClientHostName() {
+		return clientHostName;
+	}
+
+	
+	public static final int severityOf(final ATuple<Integer> priTuple) {
+		return priTuple.value & 0x7;
+	}
+
+
+	public static final int facilityOf(final ATuple<Integer> priTuple) {
+		return (priTuple.value & 0xf8) >> 3;
 	}
 	
-	@Override
-	public int hashCode() {
-		return header.hashCode(); //TODO
+	public static final ATuple<String> nextStr(final String msg, final int offset, final String name) {
+		return nextStr(msg, offset, ' ', name);
 	}
-	@Override
-	public boolean equals(Object obj) {
-		return header.equals(obj); //TODO
+	
+	public static final ATuple<String> nextStr(final String msg, final int offset, final char ch, final String name) {
+		try {
+			final int spaceAfter = msg.indexOf(ch, offset);
+			return new ATuple<>(spaceAfter + 1, msg.substring(offset, spaceAfter));
+		} catch (final Exception e) {
+			throw new ParseException(String.format(parseErrorMsg, name, msg));
+		}
 	}
+
+
+	
+	
 }
-
-
 

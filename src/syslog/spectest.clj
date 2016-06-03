@@ -1,0 +1,56 @@
+(ns syslog.testspec
+  (:require [clojure.spec :as s])
+  )
+
+(defn no-space? [s] (< (.indexOf s " ") 0))
+
+(s/def ::str-or-nil (s/or :nil nil? :str string?))
+
+(s/def ::str-no-space (s/and string? no-space?))
+
+(s/def ::str-no-space-or-nil (s/or :nil nil? :str ::str-no-space))
+
+(s/def ::facility (s/and integer? #(>= % 0) #(<= % 23)))
+(s/def ::severity (s/and integer? #(>= % 0) #(<= % 7)))
+(s/def ::rfc-5424-version (s/and integer? #(= % 1)))
+(s/def ::rfc-3164-version (s/and integer? zero?))
+(s/def ::rfc-5424-timestamp ::str-no-space)
+(s/def ::rfc-3164-timestamp (s/and string? #(= (.length %) 15)))
+(s/def ::host-name ::str-no-space-or-nil)
+(s/def ::rfc-5424-app-name ::str-no-space-or-nil)
+(s/def ::rfc-5424-proc-id ::str-no-space-or-nil)
+(s/def ::rfc-5424-msg-id ::str-no-space-or-nil)
+(s/def ::msg ::str-or-nil)
+
+
+(s/def ::rfc-5424-syslog-msg (s/keys :req [::facility 
+                                  ::severity 
+                                  ::rfc-5424-version 
+                                  ::rfc-5424-timestamp
+                                  ::host-name
+                                  ::rfc-5424-app-name
+                                  ::rfc-5424-proc-id
+                                  ::rfc-5424-msg-id
+                                  ::msg]))
+
+(s/def ::rfc-3164-syslog-msg (s/keys :req [::facility 
+                                  ::severity 
+                                  ::rfc-3164-version 
+                                  ::rfc-3164-timestamp
+                                  ::host-name
+                                  nil?
+                                  nil?
+                                  nil?
+                                  ::msg]))
+
+(s/def ::syslog-msg (s/or :rfc-5424 ::rfc-5424-syslog-msg, :rfc3164 ::rfc-3164-syslog-msg))
+(s/explain ::rfc-5424-syslog-msg {::facility 1, 
+                                  ::severity 1, 
+                                  ::rfc-5424-version 1,
+                                  ::rfc-5424-timestamp "timestamp",
+                                  ::host-name nil,
+                                  ::rfc-5424-app-name nil,
+                                  ::rfc-5424-proc-id nil,
+                                  ::rfc-5424-msg-id nil
+                                  ::msg "a msg"
+                                  })

@@ -1,15 +1,17 @@
 package syslog;
 
+import java.net.DatagramPacket;
 import java.util.Map;
 import java.util.function.Supplier;
 
 public final class LazySyslogMessage implements SyslogMessage {
-	private final String syslogMsg;
+	private final byte[] syslogMsg;
 	private SyslogMessage parsedSyslogMsg;
 	private ParseException parsedException;
-	public LazySyslogMessage(final String syslogMsg) {
+	private final DatagramPacket datagramPacket;
+	public LazySyslogMessage(final byte[] syslogMsg, final DatagramPacket datagramPacket) {
 		this.syslogMsg = syslogMsg;
-		parsedSyslogMsg = SimpleSyslogMessage.parse(syslogMsg);
+		this.datagramPacket = datagramPacket;
 		
 	}
 	@Override
@@ -66,34 +68,27 @@ public final class LazySyslogMessage implements SyslogMessage {
 	public DateTime getTimestampObj() {
 		return get(() -> parsedSyslogMsg.getTimestampObj());
 	}
-
 	
+	@Override
+	public String getClientHostName() {
+		return datagramPacket.getAddress().getHostName();
+	}
 	
-//	private <T> T get(final Supplier<T> supplier) {
-//		try {
-//			if (parsedException != null) throw parsedException;
-//			return supplier.get();
-//		} catch (final NullPointerException e) {
-//			try {
-//				parsedSyslogMsg = SimpleSyslogMessage.parse(syslogMsg);
-//				return supplier.get();
-//			} catch (final ParseException e1) {
-//				parsedException = e1;
-//				throw parsedException;
-//			}
-//		}
-//	}
 	private <T> T get(final Supplier<T> supplier) {
-			if (parsedException != null) throw parsedException;
-			if (parsedSyslogMsg == null) { 
-				try {
-					parsedSyslogMsg = SimpleSyslogMessage.parse(syslogMsg);
-				} catch (final ParseException e) {
-					parsedException = e;
-					throw e;
-				}
+		if (parsedException != null) throw parsedException;
+		if (parsedSyslogMsg == null) { 
+			try {
+				parsedSyslogMsg = Rfc5424SyslogMessageParser.parse(syslogMsg, datagramPacket.getLength());
+			} catch (final ParseException e) {
+				parsedException = e;
+				throw e;
 			}
-			return supplier.get();
+		}
+		return supplier.get();
+	}
+	@Override
+	public byte[] getRawData() {
+		return syslogMsg;
 	}
 
 }

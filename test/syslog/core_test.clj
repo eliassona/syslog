@@ -60,31 +60,47 @@
   (let [clientSocket (DatagramSocket.)
         ip-address (InetAddress/getByName "localhost")]
     (go-loop 
-      []
+      [n 0]
       (if-let [s (<! c)]
         (let [data (.getBytes s)]
           (.send clientSocket (DatagramPacket. data, (count data), ip-address, 9876))
-          (recur))
-        (do 
+          (recur (inc n)))
+        (do
+          (println (format "Nr of packets sent %s" n))
           (println "closing socket")
           (.close clientSocket))))))
 
 
 (defn client-direct []
-  (let [clientSocket (DatagramSocket.)
+  (let [run (atom true)
+        clientSocket (DatagramSocket.)
         ip-address (InetAddress/getByName "localhost")
-        data (.getBytes "<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] BOMAn application event log entry...")
+;        data (.getBytes "<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8")
+;        data (.getBytes "<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] BOMAn application event log entry...")
+;        data (.getBytes "<11>1 2003-10-11T22:14:15.003Z mymachine.example.com myappname procid17 ID47 - A message")
+        ;data (.getBytes "<11>1 x x x x")
+        data (.getBytes "<165>1 2009-11-12T21:35:53.45-08:00 hulahoop-macbook-pro.local BANKING - Transfer [Hula@12293 Amount=\"55.00\" FromAccount=\"12345601\" ToAccount=\"12345602\"][Hoop@12293 timezone=\"America/Los_Angeles\" bcId=\"DI4448\" sessionId=\"TestUser\" userId=\"User1\" hostName=\"MyHost\" companyId=\"Company1\" userProduct=\"Banking\" ipAddress=\"10.200.10.5\"] Transfer successful")
         ]
-    (while true
-       (.send clientSocket (DatagramPacket. data (count data) ip-address, 9876)))))
+    (go-loop
+      [n 0]
+      (if @run
+         (do 
+           (.send clientSocket (DatagramPacket. data (count data) ip-address, 9876))
+           (recur (inc n)))
+         (println n)
+         ))
+    run))
 
 (comment
   (def c (chan))
   (def p 
     (pacer 
-      100 
-      1E6 
+      100000 
+      1E9 
       (fn [v] "<34>1 2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - BOM'su root' failed for lonvick on /dev/pts/8") c))
   (client c)
-  (set-tps! 100000 p)
+  #_(set-tps! 100000 p)
   )
+
+
+"<165>1 2009-11-12T21:35:53.45-08:00 hulahoop-macbook-pro.local BANKING - Transfer [Hula@12293 Amount=\"55.00\" FromAccount=\"12345601\" ToAccount=\"12345602\"][Hoop@12293 timezone=\"America/Los_Angeles\" bcId=\"DI4448\" sessionId=\"TestUser\" userId=\"User1\" hostName=\"MyHost\" companyId=\"Company1\" userProduct=\"Banking\" ipAddress=\"10.200.10.5\"] Transfer successful"
