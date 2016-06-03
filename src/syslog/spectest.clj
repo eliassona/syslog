@@ -1,7 +1,8 @@
 (ns syslog.testspec
-  (:require [clojure.spec :as s])
+  (:require [clojure.spec :as s]
+            [clojure.spec.gen :as gen])
   )
-
+(defn not-empty? [s] #(not (empty? s)))
 (defn no-space? [s] (< (.indexOf s " ") 0))
 
 (s/def ::str-or-nil (s/or :nil nil? :str string?))
@@ -20,6 +21,12 @@
 (s/def ::rfc-5424-app-name ::str-no-space-or-nil)
 (s/def ::rfc-5424-proc-id ::str-no-space-or-nil)
 (s/def ::rfc-5424-msg-id ::str-no-space-or-nil)
+(s/def ::sd-id (s/and string? not-empty?))
+(s/def ::sd-param-name (s/and string? not-empty?))
+(s/def ::sd-param-value (s/and string? not-empty?))
+(s/def ::sd-param-map (s/and (s/map-of ::sd-param-name ::sd-param-value) not-empty?))
+(s/def ::sd-id-map (s/and (s/map-of ::sd-id ::sd-param-map) not-empty?))
+(s/def ::structured-data (s/or :nil nil? :map ::sd-id-map))
 (s/def ::msg ::str-or-nil)
 
 
@@ -31,6 +38,7 @@
                                   ::rfc-5424-app-name
                                   ::rfc-5424-proc-id
                                   ::rfc-5424-msg-id
+                                  ::structured-data
                                   ::msg]))
 
 (s/def ::rfc-3164-syslog-msg (s/keys :req [::facility 
@@ -52,5 +60,6 @@
                                   ::rfc-5424-app-name nil,
                                   ::rfc-5424-proc-id nil,
                                   ::rfc-5424-msg-id nil
+                                  ::structured-data nil
                                   ::msg "a msg"
                                   })
