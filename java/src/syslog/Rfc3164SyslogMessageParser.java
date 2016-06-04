@@ -1,9 +1,5 @@
 package syslog;
 
-import static syslog.SyslogMessageImpl.facilityOf;
-import static syslog.SyslogMessageImpl.parseErrorMsg;
-import static syslog.SyslogMessageImpl.severityOf;
-
 public class Rfc3164SyslogMessageParser {
 	public static SyslogMessage parseNoPri(final String syslogMsg, final byte[] data) {
 		return new SyslogMessageImpl(0, 
@@ -23,8 +19,8 @@ public class Rfc3164SyslogMessageParser {
 	public static SyslogMessage parseAfterPri(final String syslogMsg, final byte[] data, final ATuple<Integer> priTuple) {
 		final ATuple<String> timestampTuple = timestampTupleOf(syslogMsg, priTuple.index);
 		final ATuple<String> hostNameTuple = hostNameOf(syslogMsg, timestampTuple.index, "hostname");
-		return new SyslogMessageImpl(facilityOf(priTuple), 
-									 severityOf(priTuple), 
+		return new SyslogMessageImpl(SyslogMessageImpl.facilityOf(priTuple), 
+									 SyslogMessageImpl.severityOf(priTuple), 
 									 0, 
 									 timestampTuple.value, 
 									 hostNameTuple.value, 
@@ -56,13 +52,13 @@ public class Rfc3164SyslogMessageParser {
 		try {
 			final int endIx = index + TIMESTAMP_LENGTH;
 			if (syslogMsg.charAt(endIx) != ' ') {
-				throw new ParseException(String.format(parseErrorMsg, "timestamp", syslogMsg));
+				throw new ParseException(String.format(SyslogMessageImpl.parseErrorMsg, "timestamp", syslogMsg));
 			}
 			return new ATuple<>(endIx + 1, syslogMsg.substring(index, endIx));
 		} catch (final ParseException e) {
 			throw e;
 		} catch (final Exception e) {
-			throw new ParseException(String.format(parseErrorMsg, "timestamp", syslogMsg));
+			throw new ParseException(String.format(SyslogMessageImpl.parseErrorMsg, "timestamp", syslogMsg));
 		}
 	}
 }

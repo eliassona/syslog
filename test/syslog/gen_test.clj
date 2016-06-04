@@ -63,4 +63,4 @@
   errors)
 
 (deftest test-parse
-  (do-parse 100))
+  (do-parse 10000))

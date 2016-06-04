@@ -2,7 +2,7 @@
   (:require [clojure.spec :as s]
             [clojure.spec.gen :as gen])
   )
-(defn not-empty? [s] #(not (empty? s)))
+(defn not-empty? [s] (not (empty? s)))
 (defn no-space? [s] (< (.indexOf s " ") 0))
 
 (s/def ::str-or-nil (s/or :nil nil? :str string?))
@@ -27,7 +27,7 @@
 (s/def ::sd-param-map (s/and (s/map-of ::sd-param-name ::sd-param-value) not-empty?))
 (s/def ::sd-id-map (s/and (s/map-of ::sd-id ::sd-param-map) not-empty?))
 (s/def ::structured-data (s/or :nil nil? :map ::sd-id-map))
-(s/def ::msg ::str-or-nil)
+(s/def ::msg (s/or :string (s/and string? #(not (empty? %))) :nil nil?))
 
 
 (s/def ::rfc-5424-syslog-msg (s/keys :req [::facility 
