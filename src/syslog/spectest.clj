@@ -18,9 +18,12 @@
 (s/def ::rfc-5424-timestamp ::str-no-space)
 (s/def ::rfc-3164-timestamp (s/and string? #(= (.length %) 15)))
 (s/def ::host-name ::str-no-space-or-nil)
-(s/def ::rfc-5424-app-name ::str-no-space-or-nil)
+(s/def ::rfc-5424-app-name ::str-no-space-or-nil) 
 (s/def ::rfc-5424-proc-id ::str-no-space-or-nil)
 (s/def ::rfc-5424-msg-id ::str-no-space-or-nil)
+(s/def ::rfc-3164-app-name nil?) 
+(s/def ::rfc-3164-proc-id nil?)
+(s/def ::rfc-3164-msg-id nil?)
 (s/def ::sd-id (s/and string? not-empty?))
 (s/def ::sd-param-name (s/and string? not-empty?))
 (s/def ::sd-param-value (s/and string? not-empty?))
@@ -46,9 +49,9 @@
                                   ::rfc-3164-version 
                                   ::rfc-3164-timestamp
                                   ::host-name
-                                  nil?
-                                  nil?
-                                  nil?
+                                  ::rfc-3164-app-name
+                                  ::rfc-3164-proc-id
+                                  ::rfc-3164-msg-id
                                   ::msg]))
 
 (s/def ::syslog-msg (s/or :rfc-5424 ::rfc-5424-syslog-msg, :rfc3164 ::rfc-3164-syslog-msg))

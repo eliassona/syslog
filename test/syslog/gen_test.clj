@@ -30,7 +30,7 @@
     proc-id
     msg-id
     structured-data
-    msg
+    (dbg msg)
     nil
     nil)
     
@@ -49,10 +49,10 @@
    :syslog.testspec/msg (.getMsg o)})
 
 (def errors (atom []))
-(defn do-parse [n]
+(defn do-parse [rfc-spec n]
   (dotimes [i n]
     (try 
-      (let [expected (-> :syslog.testspec/rfc-5424-syslog-msg s/gen gen/generate)
+      (let [expected (-> rfc-spec s/gen gen/generate)
             actual (-> expected syslog-obj-of SyslogEncoder/encode Rfc5424SyslogMessageParser/parse map-of)
             res (= expected actual)]
         (when (not res)
@@ -63,4 +63,4 @@
   errors)
 
 (deftest test-parse
-  (do-parse 10000))
+  (do-parse 100000))
