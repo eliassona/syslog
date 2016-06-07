@@ -15,8 +15,10 @@
 (s/def ::severity (s/and integer? #(>= % 0) #(<= % 7)))
 (s/def ::rfc-5424-version (s/and integer? #(= % 1)))
 (s/def ::rfc-3164-version (s/and integer? zero?))
+(s/def ::version (s/or :rfc-5424 ::rfc-5424-version :rfc-3164 ::rfc-3164-version)) 
 (s/def ::rfc-5424-timestamp ::str-no-space)
 (s/def ::rfc-3164-timestamp (s/and string? #(= (.length %) 15)))
+(s/def ::timestamp (s/or :rfc-5424 ::rfc-5424-timestamp :rfc-3164 ::rfc-3164-timestamp))
 (s/def ::host-name ::str-no-space-or-nil)
 (s/def ::rfc-5424-app-name ::str-no-space-or-nil) 
 (s/def ::rfc-5424-proc-id ::str-no-space-or-nil)
@@ -24,6 +26,9 @@
 (s/def ::rfc-3164-app-name nil?) 
 (s/def ::rfc-3164-proc-id nil?)
 (s/def ::rfc-3164-msg-id nil?)
+(s/def ::app-name (s/or :rfc-5424 ::rfc-5424-app-name :rfc-3164 ::rfc-3164-app-name))
+(s/def ::proc-id (s/or :rfc-5424 ::rfc-5424-proc-id :rfc-3164 ::rfc-3164-proc-id))
+(s/def ::msg-id (s/or :rfc-5424 ::rfc-5424-msg-id :rfc-3164 ::rfc-3164-msg-id))
 (s/def ::sd-id (s/and string? not-empty?))
 (s/def ::sd-param-name (s/and string? not-empty?))
 (s/def ::sd-param-value (s/and string? not-empty?))
@@ -54,7 +59,7 @@
                                   ::rfc-3164-msg-id
                                   ::msg]))
 
-(s/def ::syslog-msg (s/or :rfc-5424 ::rfc-5424-syslog-msg, :rfc3164 ::rfc-3164-syslog-msg))
+(s/def ::syslog-msg (s/or :rfc-5424 ::rfc-5424-syslog-msg, :rfc-3164 ::rfc-3164-syslog-msg))
 (s/explain ::rfc-5424-syslog-msg {::facility 1, 
                                   ::severity 1, 
                                   ::rfc-5424-version 1,
