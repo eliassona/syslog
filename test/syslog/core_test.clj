@@ -96,7 +96,7 @@
   (def p 
     (pacer 
       100000 
-      1E9 
+      1E6 
       (fn [v] "<34>1 2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - BOM'su root' failed for lonvick on /dev/pts/8") c))
   (client c)
   #_(set-tps! 100000 p)
