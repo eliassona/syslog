@@ -1,16 +1,14 @@
 (ns syslog.gen_test
   (:use [clojure.pprint])
-  (:import [syslog SyslogMessageImpl SyslogEncoder Rfc5424SyslogMessageParser])
+  (:import [syslog SyslogMessageImpl SyslogEncoder Rfc5424SyslogMessageParser ParseException])
   (:require [clojure.spec.gen :as gen]
             [clojure.spec :as s]
             [clojure.test :refer :all]
             [syslog.testspec :refer :all]
+            [clojure.data :refer [diff]]
             )
   )
-(defmacro dbg [body]
-  `(let [x# ~body]
-     (println "dbg:" '~body "=" x#)
-     x#))
+
 (defn syslog-obj-of [the-map]
   (let [{facility :syslog.testspec/facility 
          severity :syslog.testspec/severity 
@@ -54,7 +52,7 @@
      :syslog.testspec/severity (.getSeverity o)
      :syslog.testspec/rfc-5424-version (.getVersion o)
      :syslog.testspec/rfc-5424-timestamp (.getTimestamp o)
-     :syslog.testspec/host-name (.getHostName o)
+     :syslog.testspec/rfc-5424-host-name (.getHostName o)
      :syslog.testspec/rfc-5424-app-name (.getAppName o)
      :syslog.testspec/rfc-5424-proc-id (.getProcId o)
      :syslog.testspec/rfc-5424-msg-id (.getMsgId o)
@@ -72,15 +70,30 @@
   (dotimes [i n]
     (try 
       (let [expected (-> rfc-spec s/gen gen/generate)
-            encoded (-> expected syslog-obj-of SyslogEncoder/encode)
-            actual (-> encoded Rfc5424SyslogMessageParser/parse map-of)
-            res (= expected actual)]
-        (when (not res)
-          (swap! errors conj {:expected expected, :actual actual, :encoded encoded}))
-        (is res))
+            encoded (-> expected syslog-obj-of SyslogEncoder/encode)]
+         (try 
+           (let 
+              [actual (-> encoded Rfc5424SyslogMessageParser/parse map-of)
+              res (= expected actual)]
+		       (when (not res)
+		         (swap! errors conj {:expected expected, :actual actual, :encoded encoded, :diff (diff expected actual)}))
+         (is res))
+           (catch ParseException e 
+		         (swap! errors conj {:expected expected, :encoded encoded})
+           )))
       (catch clojure.lang.ExceptionInfo e
         :do-nothing)))
   errors)
 
 (deftest test-parse
   (do-parse 100000))
+
+(defn test-sub-sd [e]
+  (let [buf (StringBuilder.)]
+    (SyslogEncoder/addToSdStr (key e) (val e) buf)
+    (.toString buf)))
+  
+
+(defn test-sd [m]
+  (map test-sub-sd (-> m :syslog.testspec/structured-data)))
+

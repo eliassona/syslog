@@ -1,16 +1,40 @@
 (ns syslog.testspec
   (:require [clojure.spec :as s]
-            [clojure.spec.gen :as gen])
+            [clojure.spec.gen :as gen]
+            [clojure.repl :refer [doc source]])
   )
+
+(comment
+  see rfc
+  https://tools.ietf.org/html/rfc5424
+  )
+
 (defn not-empty? [s] (not (empty? s)))
 (defn no-space? [s] (< (.indexOf s " ") 0))
-(defn no-ctrl-chars? [s]
-  (reduce (fn [v1 v2] (and v1 v2)) true (map #(< (.indexOf s %) 0) #{"\"" "]" " "})))
+
+(def ctrl-chars (into #{} (map (comp str char) (range 0 32))))
+
+(defn no-chars-below-space? [s]
+  (let [bs (.getBytes s)]
+    (if (= (count bs) 1)
+      (>= (first bs) 32)
+      true)))
+      
+
+(defn no-ctrl-chars? [s the-set]
+  (reduce (fn [v1 v2] (and v1 v2)) true (map #(and (no-chars-below-space? %) (< (.indexOf s %) 0)) the-set)))
+
+(defn no-ctrl-chars-sd-name? [s]
+  (no-ctrl-chars? s #{"=", "\"", "]", " ",  "\\"}))
   
+(defn no-ctrl-chars-sd-value? [s]
+  (no-ctrl-chars? s #{"]", "\"", "\\"}))
+
 
 (s/def ::str-ascii (s/with-gen string? gen/string-ascii))
 (s/def ::str-utf-8 (s/with-gen string? gen/string))
-(s/def ::str-utf-8-no-ctrl-chars (s/and ::str-utf-8 no-ctrl-chars?))
+(s/def ::str-ascii-no-ctrl-chars (s/and ::str-ascii no-ctrl-chars-sd-name?))
+(s/def ::str-utf-8-no-ctrl-chars (s/and ::str-utf-8 no-ctrl-chars-sd-value?))
 
 (s/def ::str-or-nil (s/with-gen (s/or :nil nil? :str string?) gen/string))
 
@@ -29,9 +53,9 @@
 (s/def ::rfc-5424-app-name ::str-no-space-or-nil) 
 (s/def ::rfc-5424-proc-id ::str-no-space-or-nil)
 (s/def ::rfc-5424-msg-id ::str-no-space-or-nil)
-(s/def ::sd-id (s/and string? not-empty?))
-(s/def ::sd-param-name (s/and ::str-utf-8-no-ctrl-chars not-empty?))
-(s/def ::sd-param-value (s/and ::str-utf-8 not-empty?))
+(s/def ::sd-id (s/and ::str-ascii-no-ctrl-chars not-empty?))
+(s/def ::sd-param-name (s/and ::str-ascii-no-ctrl-chars not-empty?))
+(s/def ::sd-param-value (s/and ::str-utf-8-no-ctrl-chars not-empty?))
 (s/def ::sd-param-map (s/and (s/map-of ::sd-param-name ::sd-param-value) not-empty?))
 (s/def ::sd-id-map (s/and (s/map-of ::sd-id ::sd-param-map) not-empty?))
 (s/def ::structured-data (s/or :nil nil? :map ::sd-id-map))

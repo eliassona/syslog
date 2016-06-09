@@ -56,7 +56,7 @@ public class SyslogEncoder {
 		return (slm.getMsg() == null) ? "": " " + slm.getMsg();
 	}
 
-	private static String sdOf(final SyslogMessage slm) {
+	public static String sdOf(final SyslogMessage slm) {
 		if (slm.getStructuredData() == null) return null;
 		final StringBuilder buf = new StringBuilder(1024);
 		for (final String key: slm.getStructuredData().keySet()) {
@@ -65,7 +65,7 @@ public class SyslogEncoder {
 		return buf.toString();
 	}
 
-	private static void addToSdStr(final String key, final Map<String, String> map, final StringBuilder buf) {
+	public static void addToSdStr(final String key, final Map<String, String> map, final StringBuilder buf) {
 		buf.append('[');
 		buf.append(key);
 		addValuesToSdStr(map, buf);

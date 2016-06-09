@@ -1,9 +1,5 @@
 package syslog;
 
-import static syslog.SyslogMessageImpl.facilityOf;
-import static syslog.SyslogMessageImpl.nextStr;
-import static syslog.SyslogMessageImpl.parseErrorMsg;
-import static syslog.SyslogMessageImpl.severityOf;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,15 +52,15 @@ public final class Rfc5424SyslogMessageParser {
 			final ATuple<Integer> priTuple) {
 		if (isCorrectVersion(syslogMsg, priTuple.index)) {
 			final ATuple<Integer> verTuple = versionOf(syslogMsg, priTuple.index);
-			final ATuple<String> timestampTuple = nextStr(syslogMsg, verTuple.index, "timestamp");
-			final ATuple<String> hostNameTuple = nextStr(syslogMsg, timestampTuple.index, "hostname");
-			final ATuple<String> appNameTuple = nextStr(syslogMsg, hostNameTuple.index, "app-name");
-			final ATuple<String> procIdTuple = nextStr(syslogMsg, appNameTuple.index, "proc-id");
-			final ATuple<String> msgIdTuple = nextStr(syslogMsg, procIdTuple.index, "msg-id");
+			final ATuple<String> timestampTuple = SyslogMessageImpl.nextStr(syslogMsg, verTuple.index, "timestamp");
+			final ATuple<String> hostNameTuple = SyslogMessageImpl.nextStr(syslogMsg, timestampTuple.index, "hostname");
+			final ATuple<String> appNameTuple = SyslogMessageImpl.nextStr(syslogMsg, hostNameTuple.index, "app-name");
+			final ATuple<String> procIdTuple = SyslogMessageImpl.nextStr(syslogMsg, appNameTuple.index, "proc-id");
+			final ATuple<String> msgIdTuple = SyslogMessageImpl.nextStr(syslogMsg, procIdTuple.index, "msg-id");
 			final ATuple<Map<String, Map<String, String>>> structuredDataTuple = sdOf(syslogMsg, msgIdTuple.index);
 			return new SyslogMessageImpl(
-					facilityOf(priTuple),
-					severityOf(priTuple), 
+					SyslogMessageImpl.facilityOf(priTuple),
+					SyslogMessageImpl.severityOf(priTuple), 
 					verTuple.value,
 					timestampTuple.value,
 					checkNull(hostNameTuple.value),
@@ -98,8 +94,10 @@ public final class Rfc5424SyslogMessageParser {
 			}
 			final ATuple<Map<String, Map<String, String>>> sdTuple = subSdOf(syslogMsg, index);
 			return new ATuple<>(sdTuple.index + 1, sdTuple.value);
+		} catch (ParseException e) {
+			throw e;
 		} catch (final Exception e) {
-			throw new ParseException(String.format(parseErrorMsg, "structured-data", syslogMsg));
+			throw new ParseException(String.format(SyslogMessageImpl.parseErrorMsg, "structured-data", syslogMsg));
 		}
 	}
 
@@ -107,7 +105,7 @@ public final class Rfc5424SyslogMessageParser {
 		final Map<String, Map<String, String>> m = new HashMap<>();
 		int ix = start;
 		do {
-			final ATuple<String> idTuple = nextStr(syslogMsg, ix + 1, "id in structured data");
+			final ATuple<String> idTuple = SyslogMessageImpl.nextStr(syslogMsg, ix + 1, "id in structured data");
 			final ATuple<Map<String, String>> sdTuple = kvSdOf(syslogMsg, idTuple.index);
 			m.put(idTuple.value, sdTuple.value);
 			ix = sdTuple.index;
@@ -127,13 +125,13 @@ public final class Rfc5424SyslogMessageParser {
 		final Map<String, String> m = new HashMap<>();
 		int subStart = start;
 		do {
-			final ATuple<String> keyTuple = nextStr(syslogMsg, subStart, '=', "sd-key");
+			final ATuple<String> keyTuple = SyslogMessageImpl.nextStr(syslogMsg, subStart, '=', "sd-key");
 			final ATuple<String> valueTuple = paramValueOf(syslogMsg, keyTuple.index + 1);
 //			final ATuple<String> valueTuple = nextStr(syslogMsg, keyTuple.index + 1, '"', "sd-value");
 			m.put(keyTuple.value, valueTuple.value);
 			subStart = valueTuple.index + 1;
 		} while (syslogMsg.charAt(subStart - 1) == ' ');
-		if (syslogMsg.charAt(subStart - 1) != ']') throw new IllegalArgumentException("No ending square bracket");
+		if (syslogMsg.charAt(subStart - 1) != ']') throw new ParseException(String.format(SyslogMessageImpl.parseErrorMsg, String.format("sd-id, due to no ending square bracket (map so far: %s)", m), syslogMsg));
 		return new ATuple<>(subStart, m);
 	}
 
@@ -194,24 +192,24 @@ public final class Rfc5424SyslogMessageParser {
 		} catch (final ParseException e) {
 			throw e;
 		} catch (final Exception e) {
-			throw new ParseException(String.format(parseErrorMsg, "priority", msg));
+			throw new ParseException(String.format(SyslogMessageImpl.parseErrorMsg, "priority", msg));
 		}
 	}
 	public static final int checkPriRange(final int priVal) {
 		if (priVal >= 0 && priVal <= 191) return priVal; //according to rfc
-		throw new ParseException(String.format(parseErrorMsg, "priority", "0 >= pri <= 191"));
+		throw new ParseException(String.format(SyslogMessageImpl.parseErrorMsg, "priority", "0 >= pri <= 191"));
 	}
 
 	public static final ATuple<Integer> versionOf(final String msg, final int offset) {
 		try { 
-			final ATuple<String> versionTuple = nextStr(msg, offset, "version");
+			final ATuple<String> versionTuple = SyslogMessageImpl.nextStr(msg, offset, "version");
 			final int version = Integer.parseInt(versionTuple.value);
 			if (version > 0 && version < 1000) {
 				return new ATuple<>(versionTuple.index, version);
 			}
-			throw new VersionParseException(String.format(parseErrorMsg, "version", msg));
+			throw new VersionParseException(String.format(SyslogMessageImpl.parseErrorMsg, "version", msg));
 		} catch (final Exception e) {
-			throw new VersionParseException(String.format(parseErrorMsg, "version", msg));
+			throw new VersionParseException(String.format(SyslogMessageImpl.parseErrorMsg, "version", msg));
 		}
 	}
 }
