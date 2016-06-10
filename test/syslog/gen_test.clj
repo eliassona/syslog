@@ -35,7 +35,7 @@
       severity
       (:syslog.testspec/rfc-3164-version the-map) 
       (:syslog.testspec/rfc-3164-timestamp the-map)
-      (:syslog.testspec/rfc-5424-host-name the-map)
+      (:syslog.testspec/rfc-3164-host-name the-map)
       nil
       nil
       nil
@@ -62,7 +62,7 @@
      :syslog.testspec/severity (.getSeverity o)
      :syslog.testspec/rfc-3164-version (.getVersion o)
      :syslog.testspec/rfc-3164-timestamp (.getTimestamp o)
-     :syslog.testspec/host-name (.getHostName o)
+     :syslog.testspec/rfc-3164-host-name (.getHostName o)
      :syslog.testspec/msg (.getMsg o)}))
 
 (def errors (atom []))
@@ -79,14 +79,14 @@
 		         (swap! errors conj {:expected expected, :actual actual, :encoded encoded, :diff (diff expected actual)}))
          (is res))
            (catch ParseException e 
-		         (swap! errors conj {:expected expected, :encoded encoded})
+		         (swap! errors conj {:expected expected, :encoded encoded, :exception e})
            )))
       (catch clojure.lang.ExceptionInfo e
         :do-nothing)))
   errors)
 
 (deftest test-parse
-  (do-parse 100000))
+  (do-parse :syslog.testspec/syslog-msg 1e6))
 
 (defn test-sub-sd [e]
   (let [buf (StringBuilder.)]

@@ -30,6 +30,9 @@
 (defn no-ctrl-chars-sd-value? [s]
   (no-ctrl-chars? s #{"]", "\"", "\\"}))
 
+(defn timestamp-3164? [s]
+    (-> s (.substring 0 1) read-string number? not)
+  )
 
 (s/def ::str-ascii (s/with-gen string? gen/string-ascii))
 (s/def ::str-utf-8 (s/with-gen string? gen/string))
@@ -40,14 +43,14 @@
 
 (s/def ::str-no-space (s/and ::str-ascii no-space?))
 
-(s/def ::str-no-space-or-nil (s/or :nil nil? :str ::str-no-space))
+(s/def ::str-no-space-or-nil (s/or :nil nil? :str (s/and ::str-no-space #(not= % "-"))))
 
 (s/def ::facility (s/and integer? #(>= % 0) #(<= % 23)))
 (s/def ::severity (s/and integer? #(>= % 0) #(<= % 7)))
 (s/def ::rfc-5424-version (s/and integer? #(= % 1)))
 (s/def ::rfc-3164-version (s/and integer? zero?))
 (s/def ::rfc-5424-timestamp ::str-no-space)
-(s/def ::rfc-3164-timestamp (s/and string? #(= (.length %) 15)))
+(s/def ::rfc-3164-timestamp (s/and string? #(= (.length %) 15) timestamp-3164?))
 (s/def ::rfc-5424-host-name ::str-no-space-or-nil)
 (s/def ::rfc-3164-host-name ::str-no-space)
 (s/def ::rfc-5424-app-name ::str-no-space-or-nil) 
@@ -72,13 +75,22 @@
                                   ::rfc-5424-msg-id
                                   ::structured-data
                                   ::msg]))
+(defmacro dbg [body]
+  `(let [x# ~body]
+     (println "dbg:" '~body "=" x#)
+     x#))
 
-(s/def ::rfc-3164-syslog-msg (s/keys :req [::facility 
-                                  ::severity 
-                                  ::rfc-3164-version 
-                                  ::rfc-3164-timestamp
-                                  ::rfc-3164-host-name
-                                  ::msg]))
+(defn valid-prival? [m]
+  (> (+ (::facility m) (::severity m)) 0))
+
+(s/def ::rfc-3164-syslog-msg (s/and 
+                               (s/keys :req [::facility 
+                                    ::severity 
+                                    ::rfc-3164-version 
+                                    ::rfc-3164-timestamp
+                                    ::rfc-3164-host-name
+                                    ::msg])
+                               valid-prival?))
 
 (s/def ::syslog-msg (s/or :rfc-5424 ::rfc-5424-syslog-msg, :rfc-3164 ::rfc-3164-syslog-msg))
 (s/explain ::rfc-5424-syslog-msg {::facility 1, 
