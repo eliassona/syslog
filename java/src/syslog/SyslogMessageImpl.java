@@ -134,7 +134,15 @@ public final class SyslogMessageImpl implements SyslogMessage {
 	}
 	
 	public static final ATuple<String> nextStr(final String msg, final int offset, final String name) {
-		return nextStr(msg, offset, ' ', name);
+		try {
+			final int spaceAfter = msg.indexOf(' ', offset);
+			if (spaceAfter == offset) {
+				throw new ParseException(String.format(parseErrorMsg, name, msg));
+			}
+			return new ATuple<>(spaceAfter + 1, msg.substring(offset, spaceAfter));
+		} catch (final Exception e) {
+			throw new ParseException(String.format(parseErrorMsg, name, msg));
+		}
 	}
 	
 	public static final ATuple<String> nextStr(final String msg, final int offset, final char ch, final String name) {

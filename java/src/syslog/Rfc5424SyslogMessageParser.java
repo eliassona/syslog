@@ -94,7 +94,7 @@ public final class Rfc5424SyslogMessageParser {
 			}
 			final ATuple<Map<String, Map<String, String>>> sdTuple = subSdOf(syslogMsg, index);
 			return new ATuple<>(sdTuple.index + 1, sdTuple.value);
-		} catch (ParseException e) {
+		} catch (final ParseException e) {
 			throw e;
 		} catch (final Exception e) {
 			throw new ParseException(String.format(SyslogMessageImpl.parseErrorMsg, "structured-data", syslogMsg));
@@ -136,38 +136,32 @@ public final class Rfc5424SyslogMessageParser {
 	}
 
 
-	public static ATuple<String> paramValueOf(final String syslogMsg, final int ix) {
-		int nextIx = ix;
+	public static final ATuple<String> paramValueOf(final String syslogMsg, final int index) {
+		int ix = index;
+		boolean escape = false;
 		final StringBuilder buf = new StringBuilder();
 		while (true) {
-			final int oldIx = nextIx;
-			nextIx = syslogMsg.indexOf('"', nextIx);
-			if (nextIx < 0) return null;
-			if (syslogMsg.charAt(nextIx - 1) == BACKSLASH) {
-				buf.append(syslogMsg.substring(oldIx + 1, nextIx + 1));
-				nextIx++;
-			} else {
-				buf.append(syslogMsg.substring(oldIx, nextIx));
-				return new ATuple<>(nextIx + 1, removeEscapesInStr(buf.toString()));
-			}
-		}
-	}
-
-
-	private static String removeEscapesInStr(final String str) {
-		final StringBuilder buf = new StringBuilder();
-		int i = 0;
-		while (i < str.length()) {
-			if (str.charAt(i) == BACKSLASH) {
-				final char nextCh = str.charAt(i + 1);
-				if (nextCh == ']' || nextCh == BACKSLASH) {
-					i++;
+			try {
+				final char ch = syslogMsg.charAt(ix);
+				if (escape) {
+					buf.append(ch);
+					escape = false;
+				} else {
+					switch (ch) {
+					case BACKSLASH: 
+						escape = true;
+						break;
+					case '"': 
+						return new ATuple<String>(ix + 1, buf.toString());
+					default:
+						buf.append(ch);
+					}
 				}
+				ix++;
+			} catch (final IndexOutOfBoundsException e) {
+				throw new ParseException(String.format(SyslogMessageImpl.parseErrorMsg, "sd-param-value", syslogMsg));
 			}
-			buf.append(str.charAt(i));
-			i++;
 		}
-		return buf.toString();
 	}
 
 

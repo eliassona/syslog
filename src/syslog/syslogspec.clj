@@ -1,4 +1,4 @@
-(ns syslog.testspec
+(ns syslog.syslogspec
   (:require [clojure.spec :as s]
             [clojure.spec.gen :as gen]
             [clojure.repl :refer [doc source]])
@@ -7,6 +7,7 @@
 (comment
   see rfc
   https://tools.ietf.org/html/rfc5424
+  https://tools.ietf.org/html/rfc3164
   )
 
 (defn not-empty? [s] (not (empty? s)))
@@ -26,9 +27,13 @@
 
 (defn no-ctrl-chars-sd-name? [s]
   (no-ctrl-chars? s #{"=", "\"", "]", " ",  "\\"}))
-  
+
+(def sd-value-not-allowed-char-set #{"]", "\"", "\\"})  
+(def sd-value-escaped-not-allowed-char-set (into #{} (map (partial str "\\") #{"]", "\"", "\\"})))  
+
+
 (defn no-ctrl-chars-sd-value? [s]
-  (no-ctrl-chars? s #{"]", "\"", "\\"}))
+  (no-ctrl-chars? s sd-value-not-allowed-char-set))
 
 (defn timestamp-3164? [s]
     (-> s (.substring 0 1) read-string number? not)
