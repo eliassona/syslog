@@ -46,13 +46,42 @@
 
 
  ;; --------------------------------------- test code for servers and clients ----------------------------------------------
-#_(defn server [] 
-     (let [serverSocket (DatagramSocket. 9876)
-           receiveData  (byte-array 1024)]
-        (while true
-            (let [receivePacket (DatagramPacket. receiveData (count receiveData))]
-              (.receive serverSocket receivePacket)
-              (-> receivePacket .getData String. parse println)))))
+(defn server [] 
+   (let [serverSocket (DatagramSocket. 9876)
+         receiveData  (byte-array 1024)]
+      (while true
+          (let [receivePacket (DatagramPacket. receiveData (count receiveData))]
+            (.receive serverSocket receivePacket)
+            (-> receivePacket .getData String. parse println)))))
+
+(defn udp-client-java-net []
+  (let [serverSocket (DatagramSocket. 9876)]
+    (fn []
+      (let [receiveData  (byte-array 1024)
+            receivePacket (DatagramPacket. receiveData (count receiveData))]
+        (.receive serverSocket receivePacket)))))
+
+;DatagramChannel channel = DatagramChannel.open();
+;channel.socket().bind(new InetSocketAddress(9999));
+;ByteBuffer buf = ByteBuffer.allocate(48);
+;buf.clear();
+
+;channel.receive(buf);
+
+(import 'java.nio.channels.DatagramChannel)
+(import 'java.nio.ByteBuffer)
+(import 'java.net.InetSocketAddress)
+
+(defn udp-client-java-nio []
+  (let [ch (DatagramChannel/open)]
+    (-> ch .socket (.bind (InetSocketAddress. 9876)))
+    (fn []
+      (let [bb (ByteBuffer/allocate 1024)]
+        (.clear bb)
+        (.receive ch bb))
+      )
+    ))
+
 
 (use 'pacer.core)
 
@@ -78,14 +107,18 @@
 ;        data (.getBytes "<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8")
 ;        data (.getBytes "<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] BOMAn application event log entry...")
 ;        data (.getBytes "<11>1 2003-10-11T22:14:15.003Z mymachine.example.com myappname procid17 ID47 - A message")
-        ;data (.getBytes "<11>1 x x x x")
-        data (.getBytes "<165>1 2009-11-12T21:35:53.45-08:00 hulahoop-macbook-pro.local BANKING - Transfer [Hula@12293 Amount=\"55.00\" FromAccount=\"12345601\" ToAccount=\"12345602\"][Hoop@12293 timezone=\"America/Los_Angeles\" bcId=\"DI4448\" sessionId=\"TestUser\" userId=\"User1\" hostName=\"MyHost\" companyId=\"Company1\" userProduct=\"Banking\" ipAddress=\"10.200.10.5\"] Transfer successful")
+        data (.getBytes "<11>1")
+;        data (.getBytes "<165>1 2009-11-12T21:35:53.45-08:00 hulahoop-macbook-pro.local BANKING - Transfer [Hula@12293 Amount=\"55.00\" FromAccount=\"12345601\" ToAccount=\"12345602\"][Hoop@12293 timezone=\"America/Los_Angeles\" bcId=\"DI4448\" sessionId=\"TestUser\" userId=\"User1\" hostName=\"MyHost\" companyId=\"Company1\" userProduct=\"Banking\" ipAddress=\"10.200.10.5\"] Transfer successful")
+        size (count data)
         ]
+    (.setReuseAddress clientSocket true)
+    (.setSendBufferSize clientSocket 1e6)
     (go-loop
-      [n 0]
-      (if @run
+      [n 0
+       ]
+      (if (< n 1e8)
          (do 
-           (.send clientSocket (DatagramPacket. data (count data) ip-address, 9876))
+           (.send clientSocket (DatagramPacket. data size ip-address, 9876))
            (recur (inc n)))
          (println n)
          ))

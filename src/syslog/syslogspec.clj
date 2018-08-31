@@ -107,5 +107,4 @@
                                   ::rfc-5424-proc-id nil,
                                   ::rfc-5424-msg-id nil
                                   ::structured-data nil
-                                  ::msg "a msg"
-                                  })
+                                  ::msg "a msg"})
